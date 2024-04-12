@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <p class="header-box">World Happiness Report</p>
+      <p class="authors">by Charles Mitz</p>
+    </div>
+    <div class="main_map">
+      <svg id="map_legend" width="400" height="40"></svg>
+      <div class="map">
+        <svg id="map" width="1200" height="600" class="map"></svg>
+      </div>
+      <div class="map_selector">
+        <input
+          type="range"
+          step="1"
+          max="2023"
+          min="2005"
+          value="2005"
+          id="year_slider"
+          class="year_slider"
+        />
+
+        <div class="slider_labels">
+          <p>2005</p>
+          <p class="annotation">Selected Year:</p>
+          <p>2023</p>
+        </div>
+        <label for="year_slider" id="year_slider"></label>
+      </div>
+    </div>
+    <div class="button-container">
+      <div id="button-bar"></div>
+    </div>
+    <div class="line_graphs">
+      <svg
+        class="line_graph"
+        width="1200"
+        height="600"
+        style="margin: 10 10 50 50"
+      >
+        <text class="graph_label" x="50%" y="50%" dominant-baseline="middle">
+          Select a Country
+        </text>
+      </svg>
+    </div>
+
+    <script>
+      const requestData = async function () {
+        /* LOAD DATASETS & CREATE MAP FEATURES */
+        const countriesData = await d3.json("data2/countries.topo.json")
+        const headline = await d3.json("data/headline.json")
+        const core = await d3.json("data/core.json")
+        const food = await d3.json("data/food.json")
+        const producer = await d3.json("data/producer.json")
+        const energy = await d3.json("data/energy.json")
+        const indicies = [core, energy, food, producer]
+        const populationData = await d3.csv("data/population.csv")
+        const gdpData = await d3.csv("data/gdp.csv")
+
+        const lifeLadder = await d3.json("data2/life_ladder.json")
+
+        const map = d3.select("#map")
+        const width = map.attr("width")
+        const height = map.attr("height")
+
+        const countries = topojson.feature(
+          countriesData,
+          countriesData.objects.countries
+        )
+        const countriesMesh = topojson.mesh(
+          countriesData,
+          countriesData.objects.countries
+        )
+        const landMesh = topojson.mesh(
+          countriesData,
+          countriesData.objects.land
+        )
+
+        const projection = d3
+          .geoNaturalEarth1()
+          .fitSize([width, height], landMesh)
+
+        const path = d3.geoPath().projection(projection)
+
+        const mapElements = map.append("g").attr("class", "mapElements")
+
+        /**
+         * Get the array of values for a given index
+         * @param {Object} index
+         * @returns {Array}
+         */
+        const getArrForIndex = (index) => {
+          let arr = []
+          for (var key in index) {
+            if (index.hasOwnProperty(key)) {
+              arr.push(index[key])
+            }
+          }
+          return arr
+        }
+
+        const lifeLadderArr = getArrForIndex(lifeLadder)
+
+        /**
+         * Get the value of a country at a given year
+         * @param {String} name
+         * @param {Number} year
+         * @returns {Number}
+         */
+        const getLifeLadderValue = (name, year) => {
+          try {
+            if (lifeLadder[name][year] == null) {
+              return null
+            }
+            // Empty Data
+            else {
+              // console.log(name + " " + year + " \n" + headline[name][year])
+              return lifeLadder[name][year]
+            }
+          } catch (error) {
+            // console.log(name + " Not in dataset")
+            return null
+          }
+        }
+
+        /**
+         * Get the color of a country at a given year
+         * @param {String} name
+         * @param {Number} year
+         * @returns {String}
+         */
+        const getlifeLadderColor = (name, year) => {
+          const extent = d3.extent(lifeLadderArr, (d) => -d[year])
+
+          const color = d3
+            .scaleSequential()
+            .domain(extent)
+            .interpolator(d3.interpolateYlGnBu)
+
+          try {
+            if (lifeLadder[name][year] == null) {
+              return "grey"
+            }
+            // Empty Data
+            else {
+              // console.log(name + " " + year + " \n" + headline[name][year])
+              return color(-lifeLadder[name][year])
+            }
+          } catch (error) {
+            // console.log(name + " Not in dataset")
+            return "grey"
+          }
+        }
+
+        /* LEGEND */
+        const legendColors = d3.schemeYlGnBu[8]
+        legendColors.reverse()
+
+        const mapLegend = d3.select("#map_legend")
+        const legendWidth = mapLegend.attr("width")
+        const cellHeight = 23
+        const cellWidth = legendWidth / legendColors.length
+
+        const legend = d3
+          .select("#map_legend")
+          .selectAll("rect")
+          .data(legendColors)
+          .join("rect")
+          .attr("x", (d, i) => i * cellWidth)
+          .attr("y", 0)
+          .attr("width", cellWidth)
+          .attr("height", cellHeight)
+          .attr("fill", (d) => d)
+
+        const legendLabels = d3
+          .select("#map_legend")
+          .selectAll("text.legend-label")
+          .data(["Less Happy", "More Happy"])
+          .join("text")
+          .attr("class", "legend-label")
+          .attr("x", (d, i) => i * legendWidth)
+          .attr("y", cellHeight + 13)
+          .style("font-family", "Glober, sans-serif")
+          .style("font-size", "16px")
+          .style("font-weight", "400")
+          .attr("fill", "#778899")
+          .attr("text-anchor", (d, i) => (i === 0 ? "start" : "end"))
+          .text((d) => d)
+
+        /**
+         * Draw the countries on the map
+         * @param {Number} year
+         * @returns {Object}
+         */
+        const drawCountries = (year) => {
+          let countriesMap = mapElements
+            .selectAll("path")
+            .data(countries.features)
+            .join("path")
+            .attr("class", "country")
+            // country name d.properties.name -> Fiji
+            .attr("id", (d) => d.properties.name)
+            .attr("inflation", (d) =>
+              getLifeLadderValue(d.properties.name, year)
+            )
+            .attr("d", path)
+            .attr("fill", (d) => getlifeLadderColor(d.properties.name, year))
+          return countriesMap
+        }
+
+        /**
+         * Draw the land and countries mesh
+         * @returns {Object}
+         */
+        const drawMesh = () => {
+          let landMap = mapElements
+            .append("path")
+            .datum(landMesh)
+            .attr("class", "landMesh")
+            .attr("d", path)
+
+          let countriesMeshMap = mapElements
+            .append("path")
+            .datum(countriesMesh)
+            .attr("class", "countriesMesh")
+            .attr("d", path)
+          return landMap, countriesMeshMap
+        }
+
+        /* SLIDER */
+        let slider = d3.select("input#year_slider")
+        let slider_label = d3.select("label#year_slider")
+
+        let year = 2005
+        let countriesMap = drawCountries(year)
+        let landMap,
+          countriesMeshMap = drawMesh()
+        slider_label.text(year).style("font-size", "30px")
+
+        function updateInflation() {
+          yearLine = d3.select("line#yearLine")
+
+          graph = d3.select("svg.graphs")
+          if (graph.attr("id") != null) {
+            country_name = graph.attr("id")
+            let width = graph.attr("width")
+            let height = graph.attr("height")
+
+            const margin = { top: 10, right: 10, bottom: 50, left: 50 }
+            const chartWidth = width - margin.left - margin.right
+            const chartHeight = height - margin.top - margin.bottom
+
+            function stripNull(arr) {
+              let res = []
+              arr.forEach((element) => {
+                if (element[1] != null) {
+                  res.push(element)
+                }
+              })
+              return res
+            }
+            try {
+              let core_country = stripNull(Object.entries(core[country_name]))
+              let food_country = stripNull(Object.entries(food[country_name]))
+              let energy_country = stripNull(
+                Object.entries(energy[country_name])
+              )
+              let producer_country = stripNull(
+                Object.entries(producer[country_name])
+              )
+
+              rateExtent = d3.extent(
+                core_country.concat(
+                  food_country,
+                  energy_country,
+                  producer_country
+                ),
+                (d) => d[1]
+              )
+
+              yearExtent = d3.extent(
+                core_country.concat(
+                  food_country,
+                  energy_country,
+                  producer_country
+                ),
+                (d) => d[0]
+              )
+
+              let yearScale = d3
+                .scaleLinear()
+                .domain(yearExtent)
+                .range([0, chartWidth])
+
+              let rateScale = d3
+                .scaleSqrt()
+                .domain(rateExtent)
+                .range([chartHeight, 0])
+              // console.log(year >= yearExtent[0] && year <= yearExtent[1])
+
+              if (year >= yearExtent[0] && year <= yearExtent[1]) {
+                yearLine
+                  .attr("x1", yearScale(year))
+                  .attr("y1", 0)
+                  .attr("x2", yearScale(year))
+                  .attr("y2", chartHeight)
+
+                if (headline[country_name][year] != undefined) {
+                  graph
+                    .select("circle.yearPoint")
+                    .attr("r", 8)
+                    .attr("cx", yearScale(year))
+                    .attr("cy", rateScale(headline[country_name][year]))
+                } else {
+                  graph.select("circle.yearPoint").attr("r", 0)
+                }
+              } else {
+                yearLine
+                  .attr("x1", "0")
+                  .attr("y1", "0")
+                  .attr("x2", "0")
+                  .attr("y2", "0")
+                graph.select("circle.yearPoint").attr("r", 0)
+              }
+            } catch {
+              console.log("No Data")
+            }
+          }
+        }
+
+        slider.on("input", function (event) {
+          year = event.target.value
+
+          // redraw with selected year
+          countriesMap = drawCountries(year)
+          landMap, (countriesMeshMap = drawMesh())
+          slider_label.text(year)
+
+          updateInflation()
+        })
+
+        // LABELS #####################################
+        const labelWidth = 230
+        const labelHeight = 55
+
+        let countryLabel = mapElements
+          .append("g")
+          .attr("class", "countryLabel")
+          .attr("visibility", "hidden")
+          .attr("transform", `translate(120,500)`)
+
+        countryLabel
+          .append("rect")
+          .attr("class", "countryLabel")
+          .attr("fill", "black")
+          .attr("opacity", 1)
+          .attr("x", -labelWidth / 2.0)
+          .attr("y", 0)
+          .attr("width", labelWidth)
+          .attr("height", labelHeight)
+          .attr("rx", 15)
+          .attr("ry", 15)
+
+        let txt = countryLabel
+          .append("text")
+          .attr("fill", "white")
+          .attr("text-anchor", "middle")
+          .attr("alignment-baseline", "hanging")
+          .style("font-size", "19px")
+          .style("font-weight", "bold")
+          .style("font-family", "sans-serif")
+          .attr("x", 0)
+          .attr("y", 7)
+
+        let txt2 = countryLabel
+          .append("text")
+          .attr("fill", "white")
+          .attr("text-anchor", "middle")
+          .attr("alignment-baseline", "hanging")
+          .style("font-size", "19px")
+          .style("font-weight", "bold")
+          .style("font-family", "sans-serif")
+          .attr("x", 0)
+          .attr("y", 30)
+
+        // MOUSE OVER EVENTS #####################################
+        function mouseOver() {
+          countryLabel.style("visibility", "visible")
+
+          let country = d3.select(this)
+          let countryName = country.datum().properties.name
+          let countryLifeLadder = getLifeLadderValue(countryName, year)
+
+          txt.text(countryName)
+          if (countryLifeLadder == null) {
+            countryLifeLadder = "Data Not Available"
+          } else {
+            countryLifeLadder = countryLifeLadder
+          }
+          txt2.text(countryLifeLadder)
+        }
+
+        function mouseOut() {
+          countryLabel.style("visibility", "hidden")
+          txt.text("No Country Selected")
+          txt2.text("")
+        }
+
+        countriesMap.on("mouseover", mouseOver)
+
+        countriesMap.on("mouseout", mouseOut)
+
+        // Graphs #######################################
+
+        let graph_div = d3.select("div.line_graphs")
+
+        // Turn population data into rates
+        const population_rates = {}
+        populationData.forEach((row) => {
+          let country_name = row["Country Name"]
+          let year = 1970
+          let rate = 0
+          let prev_pop = row[1969]
+          let curr_pop = 0
+          while (year <= 2022) {
+            curr_pop = row[year]
+            if (curr_pop != "") {
+              if (prev_pop != 0) {
+                rate = ((curr_pop - prev_pop) / prev_pop) * 100
+              }
+              population_rates[country_name] = {
+                ...population_rates[country_name],
+                [year]: rate,
+              }
+              prev_pop = curr_pop
+            }
+            year++
+          }
+        })
+
+        const gdp_rates = {}
+        gdpData.forEach((row) => {
+          let country_name = row["Country Name"]
+          let year = 1970
+          let rate = 0
+          let prev_pop = row[1969]
+          let curr_pop = 0
+          while (year <= 2022) {
+            curr_pop = row[year]
+            if (curr_pop != "") {
+              if (prev_pop != 0) {
+                rate = ((curr_pop - prev_pop) / prev_pop) * 100
+              }
+              gdp_rates[country_name] = {
+                ...gdp_rates[country_name],
+                [year]: rate,
+              }
+              prev_pop = curr_pop
+            }
+            year++
+          }
+        })
+        let BRclicked = false
+        let GDPclicked = false
+        function updateGraphAnimated(country_name, dataKey) {
+          graph_div.style("display", "")
+          let graph = graph_div.select("svg.line_graph")
+
+          graph.selectAll("*").remove()
+
+          let width = graph.attr("width")
+          let height = graph.attr("height")
+
+          const margin = { top: 10, right: 10, bottom: 50, left: 50 }
+          const chartWidth = width - margin.left - margin.right
+          const chartHeight = height - margin.top - margin.bottom
+          function stripNull(arr) {
+            let res = []
+            arr.forEach((element) => {
+              if (element[1] != null) {
+                res.push(element)
+              }
+            })
+            return res
+          }
+          graph.attr("id", country_name)
+          try {
+            if (country_name === "null") {
+              // trying to figure out the 'NO DATA' text not appearing
+              throw new Error("Country Name is null. Exiting...")
+            }
+
+            let headlineCountry = stripNull(
+              Object.entries(headline[country_name])
+            )
+
+            let populationCountry = population_rates[country_name]
+            if (dataKey == "GDP") {
+              populationCountry = gdp_rates[country_name]
+            }
+            let rateExtent = d3.extent(
+              headlineCountry.concat(Object.entries(populationCountry)),
+              (d) => d[1]
+            )
+
+            // SCALES
+
+            let rateScale = d3
+              .scaleSqrt()
+              .domain(rateExtent)
+              .range([chartHeight, 0])
+
+            let yearScale = d3
+              .scaleLinear()
+              .domain([1970, 2022])
+              .range([0, chartWidth])
+
+            let leftAxis = d3.axisLeft(rateScale)
+
+            let leftGridlines = d3
+              .axisLeft(rateScale)
+              .tickSize(-chartWidth - 10)
+              .tickFormat("")
+
+            // DRAW AXES
+            graph
+              .append("g")
+              .attr("class", "y axis")
+              .attr("transform", `translate(${margin.left - 10},${margin.top})`)
+              .call(leftAxis)
+
+            graph
+              .append("g")
+              .attr("class", "y gridlines")
+              .attr("transform", `translate(${margin.left - 10},${margin.top})`)
+              .call(leftGridlines)
+
+            let bottomAxis = d3
+              .axisBottom(yearScale)
+              .tickFormat(d3.format(".0f"))
+
+            let bottomGridlines = d3
+              .axisBottom(yearScale)
+              .tickSize(-chartHeight - 10)
+              .tickFormat("")
+
+            graph
+              .append("g")
+              .attr("class", "x axis")
+              .attr(
+                "transform",
+                `translate(${margin.left},${chartHeight + margin.top + 10})`
+              )
+              .call(bottomAxis)
+
+            graph
+              .append("g")
+              .attr("class", "x gridlines")
+              .attr(
+                "transform",
+                `translate(${margin.left},${chartHeight + margin.top + 10})`
+              )
+              .call(bottomGridlines)
+
+            // DRAW LINES
+            var headlineLineGen = d3
+              .line()
+              .x((d) => yearScale(d[0]))
+              .y((d) => rateScale(d[1]))
+              .curve(d3.curveMonotoneX)
+
+            graph
+              .append("path")
+              .datum(headlineCountry)
+              .attr("class", "line headline")
+              .attr("d", headlineLineGen)
+              .attr("transform", `translate(${margin.left},${margin.top})`)
+
+            // DRAW CIRCELS
+            graph
+              .selectAll("circle.headline")
+              .data(headlineCountry)
+              .join("circle")
+              .attr("cx", (d) => yearScale(d[0]))
+              .attr("cy", (d) => rateScale(d[1]))
+              .attr("r", 4)
+              .attr("transform", `translate(${margin.left},${margin.top})`)
+            if (BRclicked) {
+              updateGraphSecondary(country_name, "BirthRate")
+            }
+            if (GDPclicked) {
+              updateGraphSecondary(country_name, "GDP")
+            }
+          } catch (error) {
+            console.log("No Data")
+            graph_div.style("display", "")
+            graph.selectAll("*").remove()
+
+            graph
+              .append("text")
+              .text("No Data")
+              .attr("x", "50%")
+              .attr("y", "50%")
+              .attr("dominant-baseline", "middle")
+              .attr("class", "graph_label")
+          }
+        }
+
+        // We do not want to start with a blank screen, so call it once
+        let selectedDataKey = "BirthRate"
+        let country_name = "null"
+        function onClick() {
+          // Setup graph
+          graph_div.style("display", "")
+          let graph = graph_div.select("svg.line_graph")
+
+          graph.selectAll("*").remove()
+
+          let width = graph.attr("width")
+          let height = graph.attr("height")
+
+          const margin = { top: 10, right: 10, bottom: 50, left: 50 }
+          const chartWidth = width - margin.left - margin.right
+          const chartHeight = height - margin.top - margin.bottom
+
+          // Get current country
+          let country = d3.select(this)
+          country_name = country.attr("id")
+          graph.attr("id", country_name)
+
+          // Function to strip null values from data
+          function stripNull(arr) {
+            let res = []
+            arr.forEach((element) => {
+              if (element[1] != null) {
+                res.push(element)
+              }
+            })
+            return res
+          }
+          updateGraphAnimated(country_name, selectedDataKey)
+        }
+        function updateGraphSecondary(country_name, dataKey) {
+          if (country_name === "null") {
+            // trying to figure out the 'NO DATA' text not appearing
+            throw new Error("Country Name is null. Exiting...")
+          }
+          graph_div.style("display", "")
+          let graph = graph_div.select("svg.line_graph")
+          let width = graph.attr("width")
+          let height = graph.attr("height")
+
+          const margin = { top: 10, right: 10, bottom: 50, left: 50 }
+          const chartWidth = width - margin.left - margin.right
+          const chartHeight = height - margin.top - margin.bottom
+          function stripNull(arr) {
+            let res = []
+            arr.forEach((element) => {
+              if (element[1] != null) {
+                res.push(element)
+              }
+            })
+            return res
+          }
+          let headlineCountry = stripNull(
+            Object.entries(headline[country_name])
+          )
+          let populationCountry = population_rates[country_name]
+          let lineColor = "magenta"
+          if (dataKey == "Birth Rate") {
+            populationCountry = population_rates[country_name]
+            lineColor = "magenta"
+          }
+
+          if (dataKey == "GDP") {
+            populationCountry = gdp_rates[country_name]
+            lineColor = "blue"
+          }
+          let tempPath = graph.select("#" + dataKey)
+
+          if (!tempPath.empty()) {
+            tempPath.remove()
+            let dots = graph.selectAll("#" + dataKey + "dots")
+            dots.remove()
+            return
+          }
+
+          let rateExtent = d3.extent(
+            headlineCountry.concat(Object.entries(populationCountry)),
+            (d) => d[1]
+          )
+
+          let rateScale = d3
+            .scaleSqrt()
+            .domain(rateExtent)
+            .range([chartHeight, 0])
+
+          let yearScale = d3
+            .scaleLinear()
+            .domain([1970, 2022])
+            .range([0, chartWidth])
+
+          var headlineLineGen = d3
+            .line()
+            .x((d) => yearScale(d[0]))
+            .y((d) => rateScale(d[1]))
+            .curve(d3.curveMonotoneX)
+
+          graph.attr("id", country_name)
+          graph
+            .append("path")
+            .datum(Object.entries(populationCountry))
+            .attr("id", dataKey)
+            .attr("class", "line population")
+            .attr("stroke", lineColor)
+            .attr("d", headlineLineGen)
+            .attr("transform", `translate(${margin.left},${margin.top})`)
+          graph
+            .selectAll("circle.population")
+            .data(Object.entries(populationCountry))
+            .join("circle")
+            .attr("id", dataKey + "dots")
+            .attr("cx", (d) => yearScale(d[0]))
+            .attr("cy", (d) => rateScale(d[1]))
+            .attr("r", 4)
+            .attr("transform", `translate(${margin.left},${margin.top})`)
+        }
+        const dataKeyTypes = ["BirthRate", "GDP"]
+
+        dataKeyTypes.forEach((d) => {
+          // For each year key, add a new button to the button bar
+          let someText = d
+
+          if (d == "BirthRate") {
+            someText = "Birth Rate"
+          }
+          d3.select("div#button-bar")
+            .append("button")
+            .text(someText)
+            .on("click", function () {
+              // When it's clicked, call updateBars to update the chart
+              updateGraphSecondary(country_name, d)
+              selectedDataKey = d
+              if (d === "BirthRate") {
+                BRclicked = !BRclicked
+                if (BRclicked) {
+                  d3.select(this).style("color", "magenta")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+
+              if (d === "GDP") {
+                GDPclicked = !GDPclicked
+                if (GDPclicked) {
+                  d3.select(this).style("color", "blue")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+            })
+        })
+
+        countriesMap.on("click", onClick)
+        // click off
+      }
+      requestData()
+    </script>
+  </body>
+</html>

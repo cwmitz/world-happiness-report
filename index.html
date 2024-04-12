@@ -40,8 +40,8 @@
     <div class="line_graphs">
       <svg
         class="line_graph"
-        width="1200"
-        height="600"
+        width="1100"
+        height="500"
         style="margin: 10 10 50 50"
       >
         <text class="graph_label" x="50%" y="50%" dominant-baseline="middle">
@@ -52,24 +52,57 @@
 
     <script>
       const requestData = async function () {
-        /* LOAD DATASETS & CREATE MAP FEATURES */
-        const headline = await d3.json("data/headline.json")
-        const populationData = await d3.csv("data/population.csv")
-        const gdpData = await d3.csv("data/gdp.csv")
+        /* LOAD DATASETS */
+        const countriesData = await d3.json("data/countries.topo.json")
 
-        const countriesData = await d3.json("data2/countries.topo.json")
-        const lifeLadder = await d3.json("data2/life_ladder.json")
-        const freedom = await d3.json("data2/freedom_to_make_life_choices.json")
-        const generosity = await d3.json("data2/generosity.json")
-        const corruption = await d3.json("data2/perceptions_of_corruption.json")
-        const positiveAffect = await d3.json("data2/positive_affect.json")
-        const negativeAffect = await d3.json("data2/negative_affect.json")
-        const socialSupport = await d3.json("data2/social_support.json")
+        // Normal datasets
+        const lifeLadder = await d3.json("data/life_ladder.json")
+        const freedom = await d3.json("data/freedom_to_make_life_choices.json")
+        const generosity = await d3.json("data/generosity.json")
+        const corruption = await d3.json("data/perceptions_of_corruption.json")
+        const positiveAffect = await d3.json("data/positive_affect.json")
+        const negativeAffect = await d3.json("data/negative_affect.json")
+        const socialSupport = await d3.json("data/social_support.json")
         const healthyLifeExpectancy = await d3.json(
-          "data2/healthy_life_expectancy_at_birth.json"
+          "data/healthy_life_expectancy_at_birth.json"
         )
-        const logGDP = await d3.json("data2/log_gdp_per_capita.json")
+        const logGDP = await d3.json("data/log_gdp_per_capita.json")
 
+        // Standardized datasets
+        const lifeLadderS = await d3.json("data/life_ladderS.json")
+        const freedomS = await d3.json(
+          "data/freedom_to_make_life_choicesS.json"
+        )
+        const generosityS = await d3.json("data/generosityS.json")
+        const corruptionS = await d3.json(
+          "data/perceptions_of_corruptionS.json"
+        )
+        const positiveAffectS = await d3.json("data/positive_affectS.json")
+        const negativeAffectS = await d3.json("data/negative_affectS.json")
+        const socialSupportS = await d3.json("data/social_supportS.json")
+        const healthyLifeExpectancyS = await d3.json(
+          "data/healthy_life_expectancy_at_birthS.json"
+        )
+        const logGDPS = await d3.json("data/log_gdp_per_capitaS.json")
+
+        // Normalized datasets
+        const lifeLadderN = await d3.json("data/life_ladderN.json")
+        const freedomN = await d3.json(
+          "data/freedom_to_make_life_choicesN.json"
+        )
+        const generosityN = await d3.json("data/generosityN.json")
+        const corruptionN = await d3.json(
+          "data/perceptions_of_corruptionN.json"
+        )
+        const positiveAffectN = await d3.json("data/positive_affectN.json")
+        const negativeAffectN = await d3.json("data/negative_affectN.json")
+        const socialSupportN = await d3.json("data/social_supportN.json")
+        const healthyLifeExpectancyN = await d3.json(
+          "data/healthy_life_expectancy_at_birthN.json"
+        )
+        const logGDPN = await d3.json("data/log_gdp_per_capitaN.json")
+
+        /* MAP */
         const map = d3.select("#map")
         const width = map.attr("width")
         const height = map.attr("height")
@@ -355,9 +388,22 @@
           let width = graph.attr("width")
           let height = graph.attr("height")
 
-          const margin = { top: 10, right: 10, bottom: 50, left: 50 }
+          const margin = { top: 50, right: 30, bottom: 40, left: 30 }
           const chartWidth = width - margin.left - margin.right
           const chartHeight = height - margin.top - margin.bottom
+
+          // Title
+          graph
+            .append("text")
+            .text("Selected Country: " + country_name)
+            .attr("x", "50%")
+            .attr("y", "5%")
+            .style("font-size", "40px")
+            .style("font-weight", "400")
+            .attr("dominant-baseline", "middle")
+            .attr("class", "graph_label")
+            .attr("font-family", "sans-serif")
+
           function stripNull(arr) {
             let res = []
             arr.forEach((element) => {
@@ -370,38 +416,39 @@
           graph.attr("id", country_name)
 
           try {
-            // Get the data for the selected country
-            let lifeLadderCountry = stripNull(
+            const lifeLadderCountry = stripNull(
               Object.entries(lifeLadder[country_name])
             )
 
-            let logGDPCountry = stripNull(Object.entries(logGDP[country_name]))
+            const logGDPCountry = stripNull(
+              Object.entries(logGDP[country_name])
+            )
 
-            let socialSupportCountry = stripNull(
+            const socialSupportCountry = stripNull(
               Object.entries(socialSupport[country_name])
             )
 
-            let healthyLifeExpectancyCountry = stripNull(
+            const healthyLifeExpectancyCountry = stripNull(
               Object.entries(healthyLifeExpectancy[country_name])
             )
 
-            let freedomCountry = stripNull(
+            const freedomCountry = stripNull(
               Object.entries(freedom[country_name])
             )
 
-            let generosityCountry = stripNull(
+            const generosityCountry = stripNull(
               Object.entries(generosity[country_name])
             )
 
-            let corruptionCountry = stripNull(
+            const corruptionCountry = stripNull(
               Object.entries(corruption[country_name])
             )
 
-            let positiveAffectCountry = stripNull(
+            const positiveAffectCountry = stripNull(
               Object.entries(positiveAffect[country_name])
             )
 
-            let negativeAffectCountry = stripNull(
+            const negativeAffectCountry = stripNull(
               Object.entries(negativeAffect[country_name])
             )
 
@@ -706,9 +753,11 @@
 
             graph
               .append("text")
-              .text("No Data")
+              .text("Select a Country")
               .attr("x", "50%")
               .attr("y", "50%")
+              .style("font-size", "30px")
+              .style("font-weight", "400")
               .attr("dominant-baseline", "middle")
               .attr("class", "graph_label")
           }
@@ -788,19 +837,28 @@
           let someText = d
 
           if (d == "GDPCapita") {
-            someText = "GDP per Capita"
+            someText = "GDP per Capita ($)"
           }
           if (d == "SocialSupport") {
-            someText = "Social Support"
+            someText = "Social Support (0-10)"
           }
           if (d == "HealthyLifeExpectancy") {
-            someText = "(Healthy) Life Exp."
+            someText = "Healthy Life Exp. (yrs)"
           }
           if (d == "PositiveAffect") {
-            someText = "Positive Affect"
+            someText = "Positive Affect (0-10)"
           }
           if (d == "NegativeAffect") {
-            someText = "Negative Affect"
+            someText = "Negative Affect (0-10)"
+          }
+          if (d == "Freedom") {
+            someText = "Freedom (0-10)"
+          }
+          if (d == "Generosity") {
+            someText = "Generosity"
+          }
+          if (d == "Corruption") {
+            someText = "Corruption (0-10)"
           }
           d3.select("div#button-bar")
             .append("button")

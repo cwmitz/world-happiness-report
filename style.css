@@ -166,7 +166,8 @@
 .graph_label {
   fill: #778899;
   text-anchor: middle;
-  font-size: 25px;
+  font-size: 30px;
+  font-weight: 400;
   font-family: "Glober", sans-serif;
 }
 

@@ -74,7 +74,7 @@
             [[59]]
           ],
           "id": "840",
-          "properties": { "name": "United States of America" }
+          "properties": { "name": "United States" }
         },
         {
           "type": "Polygon",
@@ -130,7 +130,7 @@
           "type": "Polygon",
           "arcs": [[-8, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111]],
           "id": "180",
-          "properties": { "name": "Dem. Rep. Congo" }
+          "properties": { "name": "Congo (Kinshasa)" }
         },
         {
           "type": "Polygon",
@@ -166,7 +166,7 @@
           "type": "Polygon",
           "arcs": [[-133, 134]],
           "id": "214",
-          "properties": { "name": "Dominican Rep." }
+          "properties": { "name": "Dominican Republic" }
         },
         {
           "type": "MultiPolygon",
@@ -476,13 +476,13 @@
           "type": "Polygon",
           "arcs": [[-108, 308, -286, -129, -121, 309]],
           "id": "140",
-          "properties": { "name": "Central African Rep." }
+          "properties": { "name": "Central African Republic" }
         },
         {
           "type": "Polygon",
           "arcs": [[-107, 310, 311, 312, -287, -309]],
           "id": "178",
-          "properties": { "name": "Congo" }
+          "properties": { "name": "Congo (Brazzaville)" }
         },
         {
           "type": "Polygon",
@@ -518,7 +518,7 @@
           "type": "Polygon",
           "arcs": [[-183, -322]],
           "id": "748",
-          "properties": { "name": "eSwatini" }
+          "properties": { "name": "Eswatini" }
         },
         {
           "type": "MultiPolygon",
@@ -554,7 +554,7 @@
           "type": "Polygon",
           "arcs": [[-327, 335]],
           "id": "275",
-          "properties": { "name": "Palestine" }
+          "properties": { "name": "State of Palestine" }
         },
         {
           "type": "Polygon",
@@ -824,7 +824,7 @@
           "type": "MultiPolygon",
           "arcs": [[[-359, -425, 487, 488, -427, -418]], [[-479, 489, -484]]],
           "id": "792",
-          "properties": { "name": "Turkey" }
+          "properties": { "name": "T\u00fcrkiye" }
         },
         {
           "type": "Polygon",
@@ -928,7 +928,7 @@
           "type": "Polygon",
           "arcs": [[523]],
           "id": "158",
-          "properties": { "name": "Taiwan" }
+          "properties": { "name": "Taiwan Province of China" }
         },
         {
           "type": "MultiPolygon",
@@ -1090,7 +1090,7 @@
         {
           "type": "Polygon",
           "arcs": [[-115, -581, -583, 583]],
-          "properties": { "name": "Somaliland" }
+          "properties": { "name": "Somaliland region" }
         },
         {
           "type": "Polygon",
@@ -1108,7 +1108,7 @@
           "type": "Polygon",
           "arcs": [[-496, 586, 587]],
           "id": "070",
-          "properties": { "name": "Bosnia and Herz." }
+          "properties": { "name": "Bosnia and Herzegovina" }
         },
         {
           "type": "Polygon",
@@ -1143,7 +1143,7 @@
           "type": "Polygon",
           "arcs": [[-109, -310, -128, -579, -118, -586]],
           "id": "728",
-          "properties": { "name": "S. Sudan" }
+          "properties": { "name": "South Sudan" }
         }
       ]
     },

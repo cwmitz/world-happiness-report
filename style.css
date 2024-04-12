@@ -6,6 +6,7 @@
   margin: 0 auto;
   justify-content: center;
   align-items: center;
+  padding-bottom: 10px;
 }
 
 .year_slider {
@@ -154,8 +155,8 @@ input[type="submit"],
 input[type="reset"],
 input[type="button"] {
   display: inline-block;
-  height: 50px;
-  padding: 0 30px;
+  height: 30px;
+  padding: 5;
   color: #778899;
   text-align: center;
   font-family: "Glober", sans-serif;
@@ -170,6 +171,7 @@ input[type="button"] {
   border: 1px solid #bbb;
   cursor: pointer;
   box-sizing: border-box;
+  margin: 5px;
 }
 .button:hover,
 button:hover,
@@ -212,5 +214,26 @@ input[type="button"].button-primary:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100px;
+  width: 70%;
+  margin: 0 auto;
+}
+
+#button-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#button-bar button {
+  flex: 1 1 20%;
+  margin: 5px;
+  padding: 10px 20px;
+  text-align: center;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  width: 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

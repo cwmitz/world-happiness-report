@@ -243,14 +243,14 @@
           countriesMeshMap = drawMesh()
         slider_label.text(year).style("font-size", "30px")
 
-        function updateInflation() {
+        const updateInflation = () => {
           yearLine = d3.select("line#yearLine")
 
           graph = d3.select("svg.graphs")
           if (graph.attr("id") != null) {
             country_name = graph.attr("id")
-            let width = graph.attr("width")
-            let height = graph.attr("height")
+            const width = graph.attr("width")
+            const height = graph.attr("height")
 
             const margin = { top: 10, right: 10, bottom: 50, left: 50 }
             const chartWidth = width - margin.left - margin.right
@@ -266,12 +266,12 @@
               return res
             }
             try {
-              let core_country = stripNull(Object.entries(core[country_name]))
-              let food_country = stripNull(Object.entries(food[country_name]))
-              let energy_country = stripNull(
+              const core_country = stripNull(Object.entries(core[country_name]))
+              const food_country = stripNull(Object.entries(food[country_name]))
+              const energy_country = stripNull(
                 Object.entries(energy[country_name])
               )
-              let producer_country = stripNull(
+              const producer_country = stripNull(
                 Object.entries(producer[country_name])
               )
 
@@ -345,8 +345,8 @@
           updateInflation()
         })
 
-        // LABELS #####################################
-        const labelWidth = 230
+        /* COUNTRY LABEL */
+        const labelWidth = 200
         const labelHeight = 55
 
         let countryLabel = mapElements
@@ -389,7 +389,9 @@
           .attr("x", 0)
           .attr("y", 30)
 
-        // MOUSE OVER EVENTS #####################################
+        /**
+         * Mouseover event for countries to display country name and life ladder value
+         */
         function mouseOver() {
           countryLabel.style("visibility", "visible")
 
@@ -397,9 +399,14 @@
           let countryName = country.datum().properties.name
           let countryLifeLadder = getLifeLadderValue(countryName, year)
 
+          // Round if not null
+          if (countryLifeLadder != null) {
+            countryLifeLadder = countryLifeLadder.toFixed(3)
+          }
+
           txt.text(countryName)
           if (countryLifeLadder == null) {
-            countryLifeLadder = "Data Not Available"
+            countryLifeLadder = "NO DATA"
           } else {
             countryLifeLadder = countryLifeLadder
           }
@@ -416,9 +423,8 @@
 
         countriesMap.on("mouseout", mouseOut)
 
-        // Graphs #######################################
-
-        let graph_div = d3.select("div.line_graphs")
+        /* LINE GRAPH */
+        const graph_div = d3.select("div.line_graphs")
 
         // Turn population data into rates
         const population_rates = {}
@@ -646,7 +652,7 @@
           }
           updateGraphAnimated(country_name, selectedDataKey)
         }
-        function updateGraphSecondary(country_name, dataKey) {
+        const updateGraphSecondary = (country_name, dataKey) => {
           if (country_name === "null") {
             // trying to figure out the 'NO DATA' text not appearing
             throw new Error("Country Name is null. Exiting...")
@@ -731,7 +737,18 @@
             .attr("r", 4)
             .attr("transform", `translate(${margin.left},${margin.top})`)
         }
-        const dataKeyTypes = ["BirthRate", "GDP"]
+        const dataKeyTypes = [
+          // "BirthRate",
+          // "GDP",
+          "(log) GDP/Capita",
+          "Social Support",
+          "(Healthy) Life Exp.",
+          "Freedom",
+          "Generosity",
+          "Corruption",
+          "Positive Affect",
+          "Negative Affect",
+        ]
 
         dataKeyTypes.forEach((d) => {
           // For each year key, add a new button to the button bar

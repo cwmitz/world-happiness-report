@@ -42,12 +42,13 @@
         class="line_graph"
         width="1100"
         height="500"
-        style="margin: 10 10 50 50"
+        style="margin: 20 10 20 10"
       >
         <text class="graph_label" x="50%" y="50%" dominant-baseline="middle">
           Select a Country
         </text>
       </svg>
+      <div id="format-button-bar" class="button-container"></div>
     </div>
 
     <script>
@@ -371,6 +372,7 @@
 
         function updateGraph(
           country_name,
+          dataFormat,
           drawGDPCapita,
           drawSocialSupport,
           drawHealthyLifeExpectancy,
@@ -388,7 +390,7 @@
           let width = graph.attr("width")
           let height = graph.attr("height")
 
-          const margin = { top: 50, right: 30, bottom: 40, left: 30 }
+          const margin = { top: 50, right: 30, bottom: 40, left: 40 }
           const chartWidth = width - margin.left - margin.right
           const chartHeight = height - margin.top - margin.bottom
 
@@ -399,7 +401,7 @@
             .attr("x", "50%")
             .attr("y", "5%")
             .style("font-size", "40px")
-            .style("font-weight", "400")
+            .style("font-weight", "800")
             .attr("dominant-baseline", "middle")
             .attr("class", "graph_label")
             .attr("font-family", "sans-serif")
@@ -417,39 +419,75 @@
 
           try {
             const lifeLadderCountry = stripNull(
-              Object.entries(lifeLadder[country_name])
+              dataFormat == "o"
+                ? Object.entries(lifeLadder[country_name])
+                : dataFormat == "s"
+                ? Object.entries(lifeLadderS[country_name])
+                : Object.entries(lifeLadderN[country_name])
             )
 
             const logGDPCountry = stripNull(
-              Object.entries(logGDP[country_name])
+              dataFormat == "o"
+                ? Object.entries(logGDP[country_name])
+                : dataFormat == "s"
+                ? Object.entries(logGDPS[country_name])
+                : Object.entries(logGDPN[country_name])
             )
 
             const socialSupportCountry = stripNull(
-              Object.entries(socialSupport[country_name])
+              dataFormat == "o"
+                ? Object.entries(socialSupport[country_name])
+                : dataFormat == "s"
+                ? Object.entries(socialSupportS[country_name])
+                : Object.entries(socialSupportN[country_name])
             )
 
             const healthyLifeExpectancyCountry = stripNull(
-              Object.entries(healthyLifeExpectancy[country_name])
+              dataFormat == "o"
+                ? Object.entries(healthyLifeExpectancy[country_name])
+                : dataFormat == "s"
+                ? Object.entries(healthyLifeExpectancyS[country_name])
+                : Object.entries(healthyLifeExpectancyN[country_name])
             )
 
             const freedomCountry = stripNull(
-              Object.entries(freedom[country_name])
+              dataFormat == "o"
+                ? Object.entries(freedom[country_name])
+                : dataFormat == "s"
+                ? Object.entries(freedomS[country_name])
+                : Object.entries(freedomN[country_name])
             )
 
             const generosityCountry = stripNull(
-              Object.entries(generosity[country_name])
+              dataFormat == "o"
+                ? Object.entries(generosity[country_name])
+                : dataFormat == "s"
+                ? Object.entries(generosityS[country_name])
+                : Object.entries(generosityN[country_name])
             )
 
             const corruptionCountry = stripNull(
-              Object.entries(corruption[country_name])
+              dataFormat == "o"
+                ? Object.entries(corruption[country_name])
+                : dataFormat == "s"
+                ? Object.entries(corruptionS[country_name])
+                : Object.entries(corruptionN[country_name])
             )
 
             const positiveAffectCountry = stripNull(
-              Object.entries(positiveAffect[country_name])
+              dataFormat == "o"
+                ? Object.entries(positiveAffect[country_name])
+                : dataFormat == "s"
+                ? Object.entries(positiveAffectS[country_name])
+                : Object.entries(positiveAffectN[country_name])
             )
 
             const negativeAffectCountry = stripNull(
-              Object.entries(negativeAffect[country_name])
+              dataFormat == "o"
+                ? Object.entries(negativeAffect[country_name])
+                : dataFormat == "s"
+                ? Object.entries(negativeAffectS[country_name])
+                : Object.entries(negativeAffectN[country_name])
             )
 
             // Make the extent consider each dataset
@@ -488,6 +526,9 @@
               .attr("class", "y axis")
               .attr("transform", `translate(${margin.left - 10},${margin.top})`)
               .call(leftAxis)
+              .attr("font-family", "sans-serif")
+              .attr("font-size", "15  px")
+              .attr("color", "gray ")
 
             graph
               .append("g")
@@ -512,6 +553,9 @@
                 `translate(${margin.left},${chartHeight + margin.top + 10})`
               )
               .call(bottomAxis)
+              .attr("font-family", "sans-serif")
+              .attr("font-size", "20px")
+              .attr("color", "gray ")
 
             graph
               .append("g")
@@ -801,6 +845,7 @@
           }
           updateGraph(
             country_name,
+            originalClicked ? "o" : standardizedClicked ? "s" : "n",
             LGDPclicked,
             SSclicked,
             HLEclicked,
@@ -833,17 +878,16 @@
         let NAclicked = false
 
         dataKeyTypes.forEach((d) => {
-          // For each year key, add a new button to the button bar
           let someText = d
 
           if (d == "GDPCapita") {
-            someText = "GDP per Capita ($)"
+            someText = "Log GDP per Capita ($)"
           }
           if (d == "SocialSupport") {
             someText = "Social Support (0-10)"
           }
           if (d == "HealthyLifeExpectancy") {
-            someText = "Healthy Life Exp. (yrs)"
+            someText = "Healthy Life Exp. (10 yrs)"
           }
           if (d == "PositiveAffect") {
             someText = "Positive Affect (0-10)"
@@ -932,6 +976,7 @@
 
               updateGraph(
                 country_name,
+                originalClicked ? "o" : standardizedClicked ? "s" : "n",
                 LGDPclicked,
                 SSclicked,
                 HLEclicked,
@@ -942,6 +987,67 @@
                 NAclicked
               )
             })
+        })
+
+        dataFormats = ["Original", "Standardized", "Normalized"]
+
+        let originalClicked = true
+        let standardizedClicked = false
+        let normalizedClicked = false
+
+        dataFormats.forEach((d) => {
+          let someText = d
+          if (d == "Original") {
+            someText = "Original Data"
+          }
+          if (d == "Standardized") {
+            someText = "Standardize the Data!"
+          }
+          if (d == "Normalized") {
+            someText = "Normalize the Data!"
+          }
+          let button = d3
+            .select("div#format-button-bar")
+            .append("button")
+            .text(someText)
+            .on("click", function () {
+              if (d === "Original") {
+                originalClicked = true
+                standardizedClicked = false
+                normalizedClicked = false
+              }
+              if (d === "Standardized") {
+                originalClicked = false
+                standardizedClicked = true
+                normalizedClicked = false
+              }
+              if (d === "Normalized") {
+                originalClicked = false
+                standardizedClicked = false
+                normalizedClicked = true
+              }
+              d3.select("div#format-button-bar")
+                .selectAll("button")
+                .style("color", "#778899")
+              d3.select(this).style("color", "black")
+              updateGraph(
+                country_name,
+                originalClicked ? "o" : standardizedClicked ? "s" : "n",
+                LGDPclicked,
+                SSclicked,
+                HLEclicked,
+                Fclicked,
+                Gclicked,
+                Cclicked,
+                PAclicked,
+                NAclicked
+              )
+            })
+
+          // Apply initial black color to the 'Original' button
+          if (d === "Original") {
+            button.style("color", "black")
+          }
         })
 
         countriesMap.on("click", onClick)

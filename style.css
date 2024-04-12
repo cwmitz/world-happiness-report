@@ -82,7 +82,7 @@
 }
 
 .life-ladder {
-  stroke: orange;
+  stroke: black;
 }
 
 .gdp-capita {
@@ -93,7 +93,7 @@
   stroke: darkblue;
 }
 
-.health-life-expectancy {
+.healthy-life-expectancy {
   stroke: green;
 }
 
@@ -102,7 +102,7 @@
 }
 
 .generosity {
-  stroke: maroon;
+  stroke: orange;
 }
 
 .corruption {

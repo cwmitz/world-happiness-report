@@ -347,8 +347,6 @@
           drawPositiveAffect,
           drawNegativeAffect
         ) {
-          drawGDPCapita = true
-
           graph_div.style("display", "")
           let graph = graph_div.select("svg.line_graph")
 
@@ -490,6 +488,7 @@
               .attr("class", "line life-ladder")
               .attr("d", lineGen)
               .attr("transform", `translate(${margin.left},${margin.top})`)
+            graph.selectAll(".line.life-ladder").attr("stroke-dasharray", "5,5")
 
             // DRAW CIRCLES FOR LIFE LADDER
             graph
@@ -751,7 +750,17 @@
             })
             return res
           }
-          updateGraph(country_name, selectedDataKey)
+          updateGraph(
+            country_name,
+            LGDPclicked,
+            SSclicked,
+            HLEclicked,
+            Fclicked,
+            Gclicked,
+            Cclicked,
+            PAclicked,
+            NAclicked
+          )
         }
 
         const dataKeyTypes = [
@@ -765,8 +774,6 @@
           "NegativeAffect",
         ]
 
-        let BRclicked = false
-        let GDPclicked = false
         let LGDPclicked = false
         let SSclicked = false
         let HLEclicked = false
@@ -799,7 +806,6 @@
             .append("button")
             .text(someText)
             .on("click", function () {
-              updateGraph(country_name, d)
               selectedDataKey = d
               if (d === "GDPCapita") {
                 LGDPclicked = !LGDPclicked
@@ -836,7 +842,7 @@
               if (d === "Generosity") {
                 Gclicked = !Gclicked
                 if (Gclicked) {
-                  d3.select(this).style("color", "maroon")
+                  d3.select(this).style("color", "orange")
                 } else {
                   d3.select(this).style("color", "#778899")
                 }
@@ -865,6 +871,18 @@
                   d3.select(this).style("color", "#778899")
                 }
               }
+
+              updateGraph(
+                country_name,
+                LGDPclicked,
+                SSclicked,
+                HLEclicked,
+                Fclicked,
+                Gclicked,
+                Cclicked,
+                PAclicked,
+                NAclicked
+              )
             })
         })
 

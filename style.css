@@ -81,8 +81,40 @@
   fill: black;
 }
 
-.headline {
+.life-ladder {
   stroke: orange;
+}
+
+.gdp-capita {
+  stroke: magenta;
+}
+
+.social-support {
+  stroke: darkblue;
+}
+
+.health-life-expectancy {
+  stroke: green;
+}
+
+.freedom {
+  stroke: skyblue;
+}
+
+.generosity {
+  stroke: maroon;
+}
+
+.corruption {
+  stroke: purple;
+}
+
+.positive-affect {
+  stroke: teal;
+}
+
+.negative-affect {
+  stroke: burlywood;
 }
 
 .yearLine {

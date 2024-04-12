@@ -125,7 +125,6 @@
             }
             // Empty Data
             else {
-              // console.log(name + " " + year + " \n" + headline[name][year])
               return lifeLadder[name][year]
             }
           } catch (error) {
@@ -154,7 +153,6 @@
             }
             // Empty Data
             else {
-              // console.log(name + " " + year + " \n" + headline[name][year])
               return color(-lifeLadder[name][year])
             }
           } catch (error) {
@@ -338,65 +336,19 @@
         /* LINE GRAPH */
         const graph_div = d3.select("div.line_graphs")
 
-        // Turn population data into rates
-        const population_rates = {}
-        populationData.forEach((row) => {
-          let country_name = row["Country Name"]
-          let year = 1970
-          let rate = 0
-          let prev_pop = row[1969]
-          let curr_pop = 0
-          while (year <= 2022) {
-            curr_pop = row[year]
-            if (curr_pop != "") {
-              if (prev_pop != 0) {
-                rate = ((curr_pop - prev_pop) / prev_pop) * 100
-              }
-              population_rates[country_name] = {
-                ...population_rates[country_name],
-                [year]: rate,
-              }
-              prev_pop = curr_pop
-            }
-            year++
-          }
-        })
+        function updateGraph(
+          country_name,
+          drawGDPCapita,
+          drawSocialSupport,
+          drawHealthyLifeExpectancy,
+          drawFreedom,
+          drawGenerosity,
+          drawCorruption,
+          drawPositiveAffect,
+          drawNegativeAffect
+        ) {
+          drawGDPCapita = true
 
-        const gdp_rates = {}
-        gdpData.forEach((row) => {
-          let country_name = row["Country Name"]
-          let year = 1970
-          let rate = 0
-          let prev_pop = row[1969]
-          let curr_pop = 0
-          while (year <= 2022) {
-            curr_pop = row[year]
-            if (curr_pop != "") {
-              if (prev_pop != 0) {
-                rate = ((curr_pop - prev_pop) / prev_pop) * 100
-              }
-              gdp_rates[country_name] = {
-                ...gdp_rates[country_name],
-                [year]: rate,
-              }
-              prev_pop = curr_pop
-            }
-            year++
-          }
-        })
-
-        let BRclicked = false
-        let GDPclicked = false
-        let LGDPclicked = false
-        let SSclicked = false
-        let HLEclicked = false
-        let Fclicked = false
-        let Gclicked = false
-        let Cclicked = false
-        let PAclicked = false
-        let NAclicked = false
-
-        function updateGraphAnimated(country_name, dataKey) {
           graph_div.style("display", "")
           let graph = graph_div.select("svg.line_graph")
 
@@ -418,41 +370,70 @@
             return res
           }
           graph.attr("id", country_name)
-          try {
-            if (country_name === "null") {
-              // trying to figure out the 'NO DATA' text not appearing
-              throw new Error("Country Name is null. Exiting...")
-            }
 
-            let headlineCountry = stripNull(
-              Object.entries(headline[country_name])
+          try {
+            // Get the data for the selected country
+            let lifeLadderCountry = stripNull(
+              Object.entries(lifeLadder[country_name])
             )
 
-            let populationCountry = population_rates[country_name]
-            if (dataKey == "GDP") {
-              populationCountry = gdp_rates[country_name]
-            }
-            let rateExtent = d3.extent(
-              headlineCountry.concat(Object.entries(populationCountry)),
+            let logGDPCountry = stripNull(Object.entries(logGDP[country_name]))
+
+            let socialSupportCountry = stripNull(
+              Object.entries(socialSupport[country_name])
+            )
+
+            let healthyLifeExpectancyCountry = stripNull(
+              Object.entries(healthyLifeExpectancy[country_name])
+            )
+
+            let freedomCountry = stripNull(
+              Object.entries(freedom[country_name])
+            )
+
+            let generosityCountry = stripNull(
+              Object.entries(generosity[country_name])
+            )
+
+            let corruptionCountry = stripNull(
+              Object.entries(corruption[country_name])
+            )
+
+            let positiveAffectCountry = stripNull(
+              Object.entries(positiveAffect[country_name])
+            )
+
+            let negativeAffectCountry = stripNull(
+              Object.entries(negativeAffect[country_name])
+            )
+
+            // Make the extent consider each dataset
+            let extent = d3.extent(
+              lifeLadderCountry.concat(
+                logGDPCountry,
+                socialSupportCountry,
+                healthyLifeExpectancyCountry,
+                freedomCountry,
+                generosityCountry,
+                corruptionCountry,
+                positiveAffectCountry,
+                negativeAffectCountry
+              ),
               (d) => d[1]
             )
 
             // SCALES
-
-            let rateScale = d3
-              .scaleSqrt()
-              .domain(rateExtent)
-              .range([chartHeight, 0])
+            let scale = d3.scaleLinear().domain(extent).range([chartHeight, 0])
 
             let yearScale = d3
               .scaleLinear()
-              .domain([1970, 2022])
+              .domain(d3.extent(lifeLadderCountry, (d) => d[0]))
               .range([0, chartWidth])
 
-            let leftAxis = d3.axisLeft(rateScale)
+            let leftAxis = d3.axisLeft(scale)
 
             let leftGridlines = d3
-              .axisLeft(rateScale)
+              .axisLeft(scale)
               .tickSize(-chartWidth - 10)
               .tickFormat("")
 
@@ -496,34 +477,228 @@
               )
               .call(bottomGridlines)
 
-            // DRAW LINES
-            var headlineLineGen = d3
+            // DRAW LINES FOR LIFE LADDER
+            var lineGen = d3
               .line()
               .x((d) => yearScale(d[0]))
-              .y((d) => rateScale(d[1]))
+              .y((d) => scale(d[1]))
               .curve(d3.curveMonotoneX)
 
             graph
               .append("path")
-              .datum(headlineCountry)
-              .attr("class", "line headline")
-              .attr("d", headlineLineGen)
+              .datum(lifeLadderCountry)
+              .attr("class", "line life-ladder")
+              .attr("d", lineGen)
               .attr("transform", `translate(${margin.left},${margin.top})`)
 
-            // DRAW CIRCELS
+            // DRAW CIRCLES FOR LIFE LADDER
             graph
               .selectAll("circle.headline")
-              .data(headlineCountry)
+              .data(lifeLadderCountry)
               .join("circle")
               .attr("cx", (d) => yearScale(d[0]))
-              .attr("cy", (d) => rateScale(d[1]))
+              .attr("cy", (d) => scale(d[1]))
               .attr("r", 4)
               .attr("transform", `translate(${margin.left},${margin.top})`)
-            if (BRclicked) {
-              updateGraphSecondary(country_name, "BirthRate")
+
+            // GRAPH GDB PER CAPITA IF SELECTED
+            if (drawGDPCapita) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(logGDPCountry)
+                .attr("class", "line gdp-capita")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(logGDPCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
             }
-            if (GDPclicked) {
-              updateGraphSecondary(country_name, "GDP")
+
+            // GRAPH SOCIAL SUPPORT IF SELECTED
+            if (drawSocialSupport) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(socialSupportCountry)
+                .attr("class", "line social-support")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(socialSupportCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+            }
+
+            // GRAPH HEALTHY LIFE EXPECTANCY IF SELECTED
+            if (drawHealthyLifeExpectancy) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(healthyLifeExpectancyCountry)
+                .attr("class", "line healthy-life-expectancy")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(healthyLifeExpectancyCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+            }
+
+            // GRAPH FREEDOM IF SELECTED
+            if (drawFreedom) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(freedomCountry)
+                .attr("class", "line freedom")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(freedomCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+            }
+
+            // GRAPH GENEROSITY IF SELECTED
+            if (drawGenerosity) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(generosityCountry)
+                .attr("class", "line generosity")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(generosityCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+            }
+
+            // GRAPH CORRUPTION IF SELECTED
+            if (drawCorruption) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(corruptionCountry)
+                .attr("class", "line corruption")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(corruptionCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+            }
+
+            // GRAPH POSITIVE AFFECT IF SELECTED
+            if (drawPositiveAffect) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(positiveAffectCountry)
+                .attr("class", "line positive-affect")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(positiveAffectCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+            }
+
+            // GRAPH NEGATIVE AFFECT IF SELECTED
+            if (drawNegativeAffect) {
+              var lineGen = d3
+                .line()
+                .x((d) => yearScale(d[0]))
+                .y((d) => scale(d[1]))
+                .curve(d3.curveMonotoneX)
+
+              graph
+                .append("path")
+                .datum(negativeAffectCountry)
+                .attr("class", "line negative-affect")
+                .attr("d", lineGen)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
+
+              graph
+                .selectAll("circle.headline")
+                .data(negativeAffectCountry)
+                .join("circle")
+                .attr("cx", (d) => yearScale(d[0]))
+                .attr("cy", (d) => scale(d[1]))
+                .attr("r", 4)
+                .attr("transform", `translate(${margin.left},${margin.top})`)
             }
           } catch (error) {
             console.log("No Data")
@@ -541,8 +716,12 @@
         }
 
         // We do not want to start with a blank screen, so call it once
-        let selectedDataKey = "BirthRate"
+        let selectedDataKey = "GDPCapita"
         let country_name = "null"
+
+        /**
+         * Click event for countries to display line graph
+         */
         function onClick() {
           // Setup graph
           graph_div.style("display", "")
@@ -572,133 +751,116 @@
             })
             return res
           }
-          updateGraphAnimated(country_name, selectedDataKey)
+          updateGraph(country_name, selectedDataKey)
         }
-        const updateGraphSecondary = (country_name, dataKey) => {
-          if (country_name === "null") {
-            // trying to figure out the 'NO DATA' text not appearing
-            throw new Error("Country Name is null. Exiting...")
-          }
-          graph_div.style("display", "")
-          let graph = graph_div.select("svg.line_graph")
-          let width = graph.attr("width")
-          let height = graph.attr("height")
 
-          const margin = { top: 10, right: 10, bottom: 50, left: 50 }
-          const chartWidth = width - margin.left - margin.right
-          const chartHeight = height - margin.top - margin.bottom
-          function stripNull(arr) {
-            let res = []
-            arr.forEach((element) => {
-              if (element[1] != null) {
-                res.push(element)
-              }
-            })
-            return res
-          }
-          let headlineCountry = stripNull(
-            Object.entries(headline[country_name])
-          )
-          let populationCountry = population_rates[country_name]
-          let lineColor = "magenta"
-          if (dataKey == "Birth Rate") {
-            populationCountry = population_rates[country_name]
-            lineColor = "magenta"
-          }
-
-          if (dataKey == "GDP") {
-            populationCountry = gdp_rates[country_name]
-            lineColor = "blue"
-          }
-          let tempPath = graph.select("#" + dataKey)
-
-          if (!tempPath.empty()) {
-            tempPath.remove()
-            let dots = graph.selectAll("#" + dataKey + "dots")
-            dots.remove()
-            return
-          }
-
-          let rateExtent = d3.extent(
-            headlineCountry.concat(Object.entries(populationCountry)),
-            (d) => d[1]
-          )
-
-          let rateScale = d3
-            .scaleSqrt()
-            .domain(rateExtent)
-            .range([chartHeight, 0])
-
-          let yearScale = d3
-            .scaleLinear()
-            .domain([1970, 2022])
-            .range([0, chartWidth])
-
-          var headlineLineGen = d3
-            .line()
-            .x((d) => yearScale(d[0]))
-            .y((d) => rateScale(d[1]))
-            .curve(d3.curveMonotoneX)
-
-          graph.attr("id", country_name)
-          graph
-            .append("path")
-            .datum(Object.entries(populationCountry))
-            .attr("id", dataKey)
-            .attr("class", "line population")
-            .attr("stroke", lineColor)
-            .attr("d", headlineLineGen)
-            .attr("transform", `translate(${margin.left},${margin.top})`)
-          graph
-            .selectAll("circle.population")
-            .data(Object.entries(populationCountry))
-            .join("circle")
-            .attr("id", dataKey + "dots")
-            .attr("cx", (d) => yearScale(d[0]))
-            .attr("cy", (d) => rateScale(d[1]))
-            .attr("r", 4)
-            .attr("transform", `translate(${margin.left},${margin.top})`)
-        }
         const dataKeyTypes = [
-          "BirthRate",
-          "GDP",
-          "(log) GDP/Capita",
-          "Social Support",
-          "(Healthy) Life Exp.",
+          "GDPCapita",
+          "SocialSupport",
+          "HealthyLifeExpectancy",
           "Freedom",
           "Generosity",
           "Corruption",
-          "Positive Affect",
-          "Negative Affect",
+          "PositiveAffect",
+          "NegativeAffect",
         ]
+
+        let BRclicked = false
+        let GDPclicked = false
+        let LGDPclicked = false
+        let SSclicked = false
+        let HLEclicked = false
+        let Fclicked = false
+        let Gclicked = false
+        let Cclicked = false
+        let PAclicked = false
+        let NAclicked = false
 
         dataKeyTypes.forEach((d) => {
           // For each year key, add a new button to the button bar
           let someText = d
 
-          if (d == "BirthRate") {
-            someText = "Birth Rate"
+          if (d == "GDPCapita") {
+            someText = "GDP per Capita"
+          }
+          if (d == "SocialSupport") {
+            someText = "Social Support"
+          }
+          if (d == "HealthyLifeExpectancy") {
+            someText = "(Healthy) Life Exp."
+          }
+          if (d == "PositiveAffect") {
+            someText = "Positive Affect"
+          }
+          if (d == "NegativeAffect") {
+            someText = "Negative Affect"
           }
           d3.select("div#button-bar")
             .append("button")
             .text(someText)
             .on("click", function () {
-              // When it's clicked, call updateBars to update the chart
-              updateGraphSecondary(country_name, d)
+              updateGraph(country_name, d)
               selectedDataKey = d
-              if (d === "BirthRate") {
-                BRclicked = !BRclicked
-                if (BRclicked) {
+              if (d === "GDPCapita") {
+                LGDPclicked = !LGDPclicked
+                if (LGDPclicked) {
                   d3.select(this).style("color", "magenta")
                 } else {
                   d3.select(this).style("color", "#778899")
                 }
               }
-
-              if (d === "GDP") {
-                GDPclicked = !GDPclicked
-                if (GDPclicked) {
-                  d3.select(this).style("color", "blue")
+              if (d === "SocialSupport") {
+                SSclicked = !SSclicked
+                if (SSclicked) {
+                  d3.select(this).style("color", "darkblue")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+              if (d === "HealthyLifeExpectancy") {
+                HLEclicked = !HLEclicked
+                if (HLEclicked) {
+                  d3.select(this).style("color", "green")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+              if (d === "Freedom") {
+                Fclicked = !Fclicked
+                if (Fclicked) {
+                  d3.select(this).style("color", "skyblue")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+              if (d === "Generosity") {
+                Gclicked = !Gclicked
+                if (Gclicked) {
+                  d3.select(this).style("color", "maroon")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+              if (d === "Corruption") {
+                Cclicked = !Cclicked
+                if (Cclicked) {
+                  d3.select(this).style("color", "purple")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+              if (d === "PositiveAffect") {
+                PAclicked = !PAclicked
+                if (PAclicked) {
+                  d3.select(this).style("color", "teal")
+                } else {
+                  d3.select(this).style("color", "#778899")
+                }
+              }
+              if (d === "NegativeAffect") {
+                NAclicked = !NAclicked
+                if (NAclicked) {
+                  d3.select(this).style("color", "burlywood")
                 } else {
                   d3.select(this).style("color", "#778899")
                 }
@@ -707,7 +869,6 @@
         })
 
         countriesMap.on("click", onClick)
-        // click off
       }
       requestData()
     </script>

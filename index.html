@@ -53,17 +53,22 @@
     <script>
       const requestData = async function () {
         /* LOAD DATASETS & CREATE MAP FEATURES */
-        const countriesData = await d3.json("data2/countries.topo.json")
         const headline = await d3.json("data/headline.json")
-        const core = await d3.json("data/core.json")
-        const food = await d3.json("data/food.json")
-        const producer = await d3.json("data/producer.json")
-        const energy = await d3.json("data/energy.json")
-        const indicies = [core, energy, food, producer]
         const populationData = await d3.csv("data/population.csv")
         const gdpData = await d3.csv("data/gdp.csv")
 
+        const countriesData = await d3.json("data2/countries.topo.json")
         const lifeLadder = await d3.json("data2/life_ladder.json")
+        const freedom = await d3.json("data2/freedom_to_make_life_choices.json")
+        const generosity = await d3.json("data2/generosity.json")
+        const corruption = await d3.json("data2/perceptions_of_corruption.json")
+        const positiveAffect = await d3.json("data2/positive_affect.json")
+        const negativeAffect = await d3.json("data2/negative_affect.json")
+        const socialSupport = await d3.json("data2/social_support.json")
+        const healthyLifeExpectancy = await d3.json(
+          "data2/healthy_life_expectancy_at_birth.json"
+        )
+        const logGDP = await d3.json("data2/log_gdp_per_capita.json")
 
         const map = d3.select("#map")
         const width = map.attr("width")
@@ -243,97 +248,6 @@
           countriesMeshMap = drawMesh()
         slider_label.text(year).style("font-size", "30px")
 
-        const updateInflation = () => {
-          yearLine = d3.select("line#yearLine")
-
-          graph = d3.select("svg.graphs")
-          if (graph.attr("id") != null) {
-            country_name = graph.attr("id")
-            const width = graph.attr("width")
-            const height = graph.attr("height")
-
-            const margin = { top: 10, right: 10, bottom: 50, left: 50 }
-            const chartWidth = width - margin.left - margin.right
-            const chartHeight = height - margin.top - margin.bottom
-
-            function stripNull(arr) {
-              let res = []
-              arr.forEach((element) => {
-                if (element[1] != null) {
-                  res.push(element)
-                }
-              })
-              return res
-            }
-            try {
-              const core_country = stripNull(Object.entries(core[country_name]))
-              const food_country = stripNull(Object.entries(food[country_name]))
-              const energy_country = stripNull(
-                Object.entries(energy[country_name])
-              )
-              const producer_country = stripNull(
-                Object.entries(producer[country_name])
-              )
-
-              rateExtent = d3.extent(
-                core_country.concat(
-                  food_country,
-                  energy_country,
-                  producer_country
-                ),
-                (d) => d[1]
-              )
-
-              yearExtent = d3.extent(
-                core_country.concat(
-                  food_country,
-                  energy_country,
-                  producer_country
-                ),
-                (d) => d[0]
-              )
-
-              let yearScale = d3
-                .scaleLinear()
-                .domain(yearExtent)
-                .range([0, chartWidth])
-
-              let rateScale = d3
-                .scaleSqrt()
-                .domain(rateExtent)
-                .range([chartHeight, 0])
-              // console.log(year >= yearExtent[0] && year <= yearExtent[1])
-
-              if (year >= yearExtent[0] && year <= yearExtent[1]) {
-                yearLine
-                  .attr("x1", yearScale(year))
-                  .attr("y1", 0)
-                  .attr("x2", yearScale(year))
-                  .attr("y2", chartHeight)
-
-                if (headline[country_name][year] != undefined) {
-                  graph
-                    .select("circle.yearPoint")
-                    .attr("r", 8)
-                    .attr("cx", yearScale(year))
-                    .attr("cy", rateScale(headline[country_name][year]))
-                } else {
-                  graph.select("circle.yearPoint").attr("r", 0)
-                }
-              } else {
-                yearLine
-                  .attr("x1", "0")
-                  .attr("y1", "0")
-                  .attr("x2", "0")
-                  .attr("y2", "0")
-                graph.select("circle.yearPoint").attr("r", 0)
-              }
-            } catch {
-              console.log("No Data")
-            }
-          }
-        }
-
         slider.on("input", function (event) {
           year = event.target.value
 
@@ -341,8 +255,6 @@
           countriesMap = drawCountries(year)
           landMap, (countriesMeshMap = drawMesh())
           slider_label.text(year)
-
-          updateInflation()
         })
 
         /* COUNTRY LABEL */
@@ -406,7 +318,7 @@
 
           txt.text(countryName)
           if (countryLifeLadder == null) {
-            countryLifeLadder = "NO DATA"
+            countryLifeLadder = "No Data"
           } else {
             countryLifeLadder = countryLifeLadder
           }
@@ -472,8 +384,18 @@
             year++
           }
         })
+
         let BRclicked = false
         let GDPclicked = false
+        let LGDPclicked = false
+        let SSclicked = false
+        let HLEclicked = false
+        let Fclicked = false
+        let Gclicked = false
+        let Cclicked = false
+        let PAclicked = false
+        let NAclicked = false
+
         function updateGraphAnimated(country_name, dataKey) {
           graph_div.style("display", "")
           let graph = graph_div.select("svg.line_graph")
@@ -738,8 +660,8 @@
             .attr("transform", `translate(${margin.left},${margin.top})`)
         }
         const dataKeyTypes = [
-          // "BirthRate",
-          // "GDP",
+          "BirthRate",
+          "GDP",
           "(log) GDP/Capita",
           "Social Support",
           "(Healthy) Life Exp.",

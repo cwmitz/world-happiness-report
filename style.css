@@ -8,6 +8,9 @@
   align-items: center;
   padding-bottom: 10px;
 }
+.country {
+  cursor: pointer;
+}
 
 .year_slider {
   height: 25px;
